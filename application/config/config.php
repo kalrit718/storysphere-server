@@ -23,7 +23,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 | a PHP script and you can easily do that on your own.
 |
 */
-$config['base_url'] = 'http://localhost:8888/6cosc022w/cirest/';
+$config['base_url'] = 'http://localhost/storysphere-server';
 // $config['base_url'] = 'https://courtes.users.ecs.westminster.ac.uk/ciapp/';
 
 /*
@@ -36,7 +36,7 @@ $config['base_url'] = 'http://localhost:8888/6cosc022w/cirest/';
 | variable so that it is blank.
 |
 */
-$config['index_page'] = 'index.php';
+$config['index_page'] = '';
 
 /*
 |--------------------------------------------------------------------------
@@ -238,7 +238,7 @@ $config['log_threshold'] = 2;
 |
 */
 // $config['log_path'] = '/Applications/MAMP/htdocs/6cosc005w/ciapp/application/logs/';
-$config['log_path'] = '/Applications/MAMP/htdocs/6cosc022w/cirest/application/logs/';
+$config['log_path'] = 'C:/xampp/htdocs/storysphere-server/application/logs/';
 
 /*
 |--------------------------------------------------------------------------
