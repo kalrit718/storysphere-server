@@ -17,6 +17,10 @@ class Users extends RestController {
 		$this->load->model('User');
 	}
 
+	/** HTTP_GET: Get the details of the user for the given user handle
+   * @param string $user_handle
+   * @return HTTP_Response The HTTP status code according to the result and the data body
+   */
   public function index_get() {
 		$user_handle = $this->input->get('user_handle');
 
@@ -40,6 +44,14 @@ class Users extends RestController {
 		$this->response($success_response, RestController::HTTP_OK);
 	}
 
+	/** HTTP_POST: Create a new user with the provided details
+   * @param string $user_handle
+   * @param string $first_name
+   * @param string $middle_name
+   * @param string $last_name
+   * @param string $email
+   * @return HTTP_Response The HTTP status code according to the result and the data body
+   */
   public function index_post() {
 		$user_handle = $this->input->get('user_handle');
 		$first_name = $this->input->get('first_name');
@@ -52,7 +64,7 @@ class Users extends RestController {
     }
     catch(InvalidArgumentException $ex) {
       $error_response = json_encode(array('message' => 'Invlid or Missing Argument!'));
-      $this->response($error_response, RestController::HTTP_OK);
+      $this->response($error_response, RestController::HTTP_BAD_REQUEST);
     }
     catch(UserHandleTakenException $ex) {
       $error_response = json_encode(array('message' => $ex->errorMessage()));
@@ -67,6 +79,14 @@ class Users extends RestController {
 		$result ? $this->response($success_response, RestController::HTTP_CREATED) : $this->response(null, RestController::HTTP_INTERNAL_ERROR);
 	}
 
+	/** HTTP_PUT: Update the details of the user with the provided details
+   * @param string $user_handle
+   * @param string $first_name
+   * @param string $middle_name
+   * @param string $last_name
+   * @param string $email
+   * @return HTTP_Response The HTTP status code according to the result and the data body
+   */
 	public function index_put() {
 		$user_handle = $this->input->get('user_handle');
 		$first_name = $this->input->get('first_name');
@@ -98,6 +118,10 @@ class Users extends RestController {
 		$result ? $this->response($success_response, RestController::HTTP_OK) : $this->response(null, RestController::HTTP_INTERNAL_ERROR);
 	}
 
+	/** HTTP_DELETE: Delete the user for the given user handle
+   * @param string $user_handle
+   * @return HTTP_Response The HTTP status code according to the result and the data body
+   */
 	public function index_delete() {
 		$user_handle = $this->input->get('user_handle');
 

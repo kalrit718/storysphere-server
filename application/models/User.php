@@ -11,6 +11,10 @@ class User extends CI_Model {
     $this->load->database();
   }
 
+  /** Get the details of the user for the given user handle
+   * @param string $user_handle
+   * @return array Details of the user
+   */
   public function get_user($user_handle) {
     if(!$user_handle) {
       throw new UserHandleRequiredException();
@@ -29,6 +33,14 @@ class User extends CI_Model {
     return $result;
   }
 
+  /** Create a new user with the provided details
+   * @param string $user_handle
+   * @param string $first_name
+   * @param string $middle_name
+   * @param string $last_name
+   * @param string $email
+   * @return int Number of rows affected by the SQL operation
+   */
   public function create($user_handle, $first_name, $middle_name, $last_name, $email) {
     if(!($user_handle && $first_name && $last_name && $email) ) {
       throw new InvalidArgumentException();
@@ -49,6 +61,14 @@ class User extends CI_Model {
     return $this->db->affected_rows();
   }
 
+  /** Update the details of the user with the provided details
+   * @param string $user_handle
+   * @param string $first_name
+   * @param string $middle_name
+   * @param string $last_name
+   * @param string $email
+   * @return int Number of rows affected by the SQL operation
+   */
   public function update($user_handle, $first_name, $middle_name, $last_name, $email) {
     if(!$user_handle) {
       throw new UserHandleRequiredException();
@@ -73,6 +93,10 @@ class User extends CI_Model {
     return $this->db->affected_rows();
   }
 
+  /** Delete the user for the given user handle
+   * @param string $user_handle
+   * @return int Number of rows affected by the SQL operation
+   */
   public function delete($user_handle) {
     if(!$user_handle) {
       throw new UserHandleRequiredException();
@@ -87,6 +111,10 @@ class User extends CI_Model {
     return $this->db->affected_rows();
   }
 
+  /** Checks whether the user for the given user handle exists
+   * @param string $user_handle
+   * @return boolean 'True' if the user exists, and 'False' if isn't
+   */
   private function is_user_exist($user_handle) {
     $this->db->from($this->table);
     $this->db->where('user_handle', $user_handle);
