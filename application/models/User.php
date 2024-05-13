@@ -23,7 +23,7 @@ class User extends CI_Model {
       throw new UserHandleDoesNotExistException();
     }
 
-    $this->db->select('user_handle, first_name, middle_name, last_name, email');
+    $this->db->select('user_handle, first_name, middle_name, last_name, email, image_url');
     $this->db->from($this->table);
     $this->db->where('user_handle', $user_handle);
 
@@ -39,10 +39,11 @@ class User extends CI_Model {
    * @param string $middle_name
    * @param string $last_name
    * @param string $email
+   * @param string $image_url
    * @return int Number of rows affected by the SQL operation
    */
-  public function create($user_handle, $first_name, $middle_name, $last_name, $email) {
-    if(!($user_handle && $first_name && $last_name && $email) ) {
+  public function create($user_handle, $first_name, $middle_name, $last_name, $email, $image_url) {
+    if(!($user_handle && $first_name && $last_name && $email && $image_url) ) {
       throw new InvalidArgumentException();
     }
     if($this->is_user_exist($user_handle)) {
@@ -56,6 +57,7 @@ class User extends CI_Model {
       'email' => $email
     );
     $middle_name && $data['middle_name'] = $middle_name;
+    $image_url && $data['image_url'] = $image_url;
     $this->db->insert($this->table, $data);
 
     return $this->db->affected_rows();
@@ -67,9 +69,10 @@ class User extends CI_Model {
    * @param string $middle_name
    * @param string $last_name
    * @param string $email
+   * @param string $image_url
    * @return int Number of rows affected by the SQL operation
    */
-  public function update($user_handle, $first_name, $middle_name, $last_name, $email) {
+  public function update($user_handle, $first_name, $middle_name, $last_name, $email, $image_url) {
     if(!$user_handle) {
       throw new UserHandleRequiredException();
     }
@@ -82,6 +85,7 @@ class User extends CI_Model {
     $middle_name && $data['middle_name'] = $middle_name;
     $last_name && $data['last_name'] = $last_name;
     $email && $data['email'] = $email;
+    $image_url && $data['image_url'] = $image_url;
 
     if(count($data) <= 0) {
       throw new InvalidArgumentException();
