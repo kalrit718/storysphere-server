@@ -50,6 +50,7 @@ class Users extends RestController {
    * @param string $middle_name
    * @param string $last_name
    * @param string $email
+   * @param string $image_url
    * @return HTTP_Response The HTTP status code according to the result and the data body
    */
   public function index_post() {
@@ -58,9 +59,10 @@ class Users extends RestController {
 		$middle_name = $this->input->get('middle_name');
 		$last_name = $this->input->get('last_name');
 		$email = $this->input->get('email');
+		$image_url = $this->input->get('image_url');
 
     try {
-      $result = $this->User->create($user_handle, $first_name, $middle_name, $last_name, $email);
+      $result = $this->User->create($user_handle, $first_name, $middle_name, $last_name, $email, $image_url);
     }
     catch(InvalidArgumentException $ex) {
       $error_response = json_encode(array('message' => 'Invlid or Missing Argument!'));
@@ -85,6 +87,7 @@ class Users extends RestController {
    * @param string $middle_name
    * @param string $last_name
    * @param string $email
+   * @param string $image_url
    * @return HTTP_Response The HTTP status code according to the result and the data body
    */
 	public function index_put() {
@@ -93,9 +96,10 @@ class Users extends RestController {
 		$middle_name = $this->input->get('middle_name');
 		$last_name = $this->input->get('last_name');
 		$email = $this->input->get('email');
+		$image_url = $this->input->get('image_url');
 
 		try {
-			$result = $this->User->update($user_handle, $first_name, $middle_name, $last_name, $email);
+			$result = $this->User->update($user_handle, $first_name, $middle_name, $last_name, $email, $image_url);
 		}
 		catch(UserHandleRequiredException $ex) {
 			$error_response = json_encode(array('message' => $ex->errorMessage()));
