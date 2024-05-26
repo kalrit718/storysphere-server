@@ -14,8 +14,20 @@ class UserHandleRequiredException extends Exception {
   }
 }
 
+class PasswordRequiredException extends Exception {
+  public function errorMessage() {
+    return 'Password required!';
+  }
+}
+
 class UserHandleDoesNotExistException extends Exception {
   public function errorMessage() {
     return 'User handle does not exist!';
+  }
+}
+
+class InvalidPasswordException extends Exception {
+  public function errorMessage() {
+    return 'Invalid password!';
   }
 }

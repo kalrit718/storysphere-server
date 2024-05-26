@@ -17,6 +17,7 @@ class Comments extends RestController {
 		parent::__construct();
 
 		$this->load->model('Comment');
+		$this->load->model('User');
 	}
 
 	/** HTTP_GET: Get the details of the comment for the given comment id
@@ -24,26 +25,42 @@ class Comments extends RestController {
    * @return HTTP_Response The HTTP status code according to the result and the data body
    */
 	public function index_get() {
-		$comment_id = $this->input->get('id');
-
-		try {
-			$comment_record = $this->Comment->get_comment($comment_id);
-		}
-		catch(CommentIdRequiredException $ex) {
-			$error_response = json_encode(array('message' => $ex->errorMessage()));
-      $this->response($error_response, RestController::HTTP_BAD_REQUEST);
-		}
-		catch(CommentDoesNotExistException $ex) {
-			$error_response = json_encode(array('message' => $ex->errorMessage()));
-      $this->response($error_response, RestController::HTTP_BAD_REQUEST);
-		}
-		catch(Exception $ex) {
-      $error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
-      $this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
-    }
+		$headers = $this->input->request_headers();
+		if (isset($headers['Authorization'])) {
+			$auth_header = $headers['Authorization'];
+			$auth_token = preg_replace('/^Bearer\s*/', '', $auth_header);
+			
+			if ($this->User->is_valid_token($auth_token)) {
+				$comment_id = $this->input->get('id');
 		
-		$success_response = json_encode($comment_record);
-		$this->response($success_response, RestController::HTTP_OK);
+				try {
+					$comment_record = $this->Comment->get_comment($comment_id);
+				}
+				catch(CommentIdRequiredException $ex) {
+					$error_response = json_encode(array('message' => $ex->errorMessage()));
+					$this->response($error_response, RestController::HTTP_BAD_REQUEST);
+				}
+				catch(CommentDoesNotExistException $ex) {
+					$error_response = json_encode(array('message' => $ex->errorMessage()));
+					$this->response($error_response, RestController::HTTP_BAD_REQUEST);
+				}
+				catch(Exception $ex) {
+					$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
+					$this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
+				}
+				
+				$success_response = json_encode($comment_record);
+				$this->response($success_response, RestController::HTTP_OK);
+			}
+			else {
+				$error_response = json_encode(array('status' => 'error', 'message' => 'Unauthorized!'));
+				$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
+			}
+		}
+		else {
+			$error_response = json_encode(array('status' => 'error', 'message' => 'No authorization header found!'));
+			$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
+		}
 	}
 
 	/** HTTP_GET: Get all comments for the given post
@@ -51,22 +68,70 @@ class Comments extends RestController {
    * @return HTTP_Response The HTTP status code according to the result and the data body
    */
 	public function post_get() {
-		$post_id = $this->input->get('post_id');
-
-		try {
-			$comment_records = $this->Comment->get_post_comments($post_id);
-		}
-		catch(PostIdRequiredException $ex) {
-			$error_response = json_encode(array('message' => $ex->errorMessage()));
-      $this->response($error_response, RestController::HTTP_BAD_REQUEST);
-		}
-		catch(Exception $ex) {
-      $error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
-      $this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
-    }
+		$headers = $this->input->request_headers();
+		if (isset($headers['Authorization'])) {
+			$auth_header = $headers['Authorization'];
+			$auth_token = preg_replace('/^Bearer\s*/', '', $auth_header);
+			
+			if ($this->User->is_valid_token($auth_token)) {
+				$post_id = $this->input->get('post_id');
 		
-		$success_response = json_encode($comment_records);
-		$this->response($success_response, RestController::HTTP_OK);
+				try {
+					$comment_records = $this->Comment->get_post_comments($post_id);
+				}
+				catch(PostIdRequiredException $ex) {
+					$error_response = json_encode(array('message' => $ex->errorMessage()));
+					$this->response($error_response, RestController::HTTP_BAD_REQUEST);
+				}
+				catch(Exception $ex) {
+					$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
+					$this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
+				}
+				
+				$success_response = json_encode($comment_records);
+				$this->response($success_response, RestController::HTTP_OK);
+			}
+			else {
+				$error_response = json_encode(array('status' => 'error', 'message' => 'Unauthorized!'));
+				$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
+			}
+		}
+		else {
+			$error_response = json_encode(array('status' => 'error', 'message' => 'No authorization header found!'));
+			$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
+		}
+	}
+
+	/** HTTP_GET: Get all comments
+   * @return HTTP_Response The HTTP status code according to the result and the data body
+   */
+	public function all_get() {
+		$headers = $this->input->request_headers();
+		if (isset($headers['Authorization'])) {
+			$auth_header = $headers['Authorization'];
+			$auth_token = preg_replace('/^Bearer\s*/', '', $auth_header);
+			
+			if ($this->User->is_valid_token($auth_token)) {
+				try {
+					$comment_records = $this->Comment->get_all_comments();
+				}
+				catch(Exception $ex) {
+					$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
+					$this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
+				}
+				
+				$success_response = json_encode($comment_records);
+				$this->response($success_response, RestController::HTTP_OK);
+			}
+			else {
+				$error_response = json_encode(array('status' => 'error', 'message' => 'Unauthorized!'));
+				$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
+			}
+		}
+		else {
+			$error_response = json_encode(array('status' => 'error', 'message' => 'No authorization header found!'));
+			$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
+		}
 	}
 
 	/** HTTP_POST: Create a new comment with the provided details
@@ -76,29 +141,45 @@ class Comments extends RestController {
    * @return HTTP_Response The HTTP status code according to the result and the data body
    */
 	public function index_post() {
-		$post_id = $this->input->get('post_id');
-		$comment_body = $this->input->get('comment_body');
-		$user_handle = $this->input->get('user_handle');
+		$headers = $this->input->request_headers();
+		if (isset($headers['Authorization'])) {
+			$auth_header = $headers['Authorization'];
+			$auth_token = preg_replace('/^Bearer\s*/', '', $auth_header);
+			
+			if ($this->User->is_valid_token($auth_token)) {
+				$post_id = $this->input->get('post_id');
+				$comment_body = $this->input->get('comment_body');
+				$user_handle = $this->input->get('user_handle');
+				
+				try {
+					$comment_id = $this->Comment->create($post_id, $comment_body, $user_handle);
+				}
+				catch(InvalidArgumentException $ex) {
+					$error_response = json_encode(array('message' => 'Invlid or Missing Argument!'));
+					$this->response($error_response, RestController::HTTP_BAD_REQUEST);
+				}
+				catch(Exception $ex) {
+					$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
+					$this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
+				}
 		
-		try {
-			$comment_id = $this->Comment->create($post_id, $comment_body, $user_handle);
+				if(!$comment_id) {
+					$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
+					$this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
+				}
+		
+				$success_response = json_encode(array('created_comment_id' => $comment_id));
+				$this->response($success_response, RestController::HTTP_CREATED);
+			}
+			else {
+				$error_response = json_encode(array('status' => 'error', 'message' => 'Unauthorized!'));
+				$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
+			}
 		}
-		catch(InvalidArgumentException $ex) {
-			$error_response = json_encode(array('message' => 'Invlid or Missing Argument!'));
-      $this->response($error_response, RestController::HTTP_BAD_REQUEST);
+		else {
+			$error_response = json_encode(array('status' => 'error', 'message' => 'No authorization header found!'));
+			$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
 		}
-		catch(Exception $ex) {
-      $error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
-      $this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
-    }
-
-		if(!$comment_id) {
-			$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
-      $this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
-		}
-
-		$success_response = json_encode(array('created_comment_id' => $comment_id));
-		$this->response($success_response, RestController::HTTP_CREATED);
 	}
 
 	/** HTTP_PUT: Update the conent of the comment body
@@ -107,32 +188,48 @@ class Comments extends RestController {
    * @return HTTP_Response The HTTP status code according to the result and the data body
    */
 	public function index_put() {
-		$comment_id = $this->input->get('id');
-		$comment_body = $this->input->get('comment_body');
-
-		try {
-			$result = $this->Comment->update($comment_id, $comment_body);
+		$headers = $this->input->request_headers();
+		if (isset($headers['Authorization'])) {
+			$auth_header = $headers['Authorization'];
+			$auth_token = preg_replace('/^Bearer\s*/', '', $auth_header);
+			
+			if ($this->User->is_valid_token($auth_token)) {
+				$comment_id = $this->input->get('id');
+				$comment_body = $this->input->get('comment_body');
+		
+				try {
+					$result = $this->Comment->update($comment_id, $comment_body);
+				}
+				catch(InvalidArgumentException $ex) {
+					$error_response = json_encode(array('message' => 'Invlid or Missing Argument!'));
+					$this->response($error_response, RestController::HTTP_BAD_REQUEST);
+				}
+				catch(CommentDoesNotExistException $ex) {
+					$error_response = json_encode(array('message' => $ex->errorMessage()));
+					$this->response($error_response, RestController::HTTP_BAD_REQUEST);
+				}
+				catch(Exception $ex) {
+					$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
+					$this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
+				}
+		
+				if(!$result) {
+					$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
+					$this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
+				}
+		
+				$success_response = json_encode(array('message' => 'Updated the comment body successfully!'));
+				$this->response($success_response, RestController::HTTP_OK);
+			}
+			else {
+				$error_response = json_encode(array('status' => 'error', 'message' => 'Unauthorized!'));
+				$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
+			}
 		}
-		catch(InvalidArgumentException $ex) {
-			$error_response = json_encode(array('message' => 'Invlid or Missing Argument!'));
-      $this->response($error_response, RestController::HTTP_BAD_REQUEST);
+		else {
+			$error_response = json_encode(array('status' => 'error', 'message' => 'No authorization header found!'));
+			$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
 		}
-		catch(CommentDoesNotExistException $ex) {
-			$error_response = json_encode(array('message' => $ex->errorMessage()));
-      $this->response($error_response, RestController::HTTP_BAD_REQUEST);
-		}
-		catch(Exception $ex) {
-      $error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
-      $this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
-    }
-
-		if(!$result) {
-			$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
-      $this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
-		}
-
-		$success_response = json_encode(array('message' => 'Updated the comment body successfully!'));
-		$this->response($success_response, RestController::HTTP_OK);
 	}
 
 	/** HTTP_DELETE: Delete the comment for the given id
@@ -140,31 +237,47 @@ class Comments extends RestController {
    * @return HTTP_Response The HTTP status code according to the result and the data body
    */
 	public function index_delete() {
-		$comment_id = $this->input->get('id');
-
-		try {
-			$result = $this->Comment->delete($comment_id);
+		$headers = $this->input->request_headers();
+		if (isset($headers['Authorization'])) {
+			$auth_header = $headers['Authorization'];
+			$auth_token = preg_replace('/^Bearer\s*/', '', $auth_header);
+			
+			if ($this->User->is_valid_token($auth_token)) {
+				$comment_id = $this->input->get('id');
+		
+				try {
+					$result = $this->Comment->delete($comment_id);
+				}
+				catch(CommentIdRequiredException $ex) {
+					$error_response = json_encode(array('message' => $ex->errorMessage()));
+					$this->response($error_response, RestController::HTTP_BAD_REQUEST);
+				}
+				catch(CommentDoesNotExistException $ex) {
+					$error_response = json_encode(array('message' => $ex->errorMessage()));
+					$this->response($error_response, RestController::HTTP_BAD_REQUEST);
+				}
+				catch(Exception $ex) {
+					$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
+					$this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
+				}
+		
+				if(!$result) {
+					$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
+					$this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
+				}
+		
+				$success_response = json_encode(array('message' => 'Deleted the comment successfully!'));
+				$this->response($success_response, RestController::HTTP_OK);
+			}
+			else {
+				$error_response = json_encode(array('status' => 'error', 'message' => 'Unauthorized!'));
+				$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
+			}
 		}
-		catch(CommentIdRequiredException $ex) {
-			$error_response = json_encode(array('message' => $ex->errorMessage()));
-      $this->response($error_response, RestController::HTTP_BAD_REQUEST);
+		else {
+			$error_response = json_encode(array('status' => 'error', 'message' => 'No authorization header found!'));
+			$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
 		}
-		catch(CommentDoesNotExistException $ex) {
-			$error_response = json_encode(array('message' => $ex->errorMessage()));
-      $this->response($error_response, RestController::HTTP_BAD_REQUEST);
-		}
-		catch(Exception $ex) {
-      $error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
-      $this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
-    }
-
-		if(!$result) {
-			$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
-      $this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
-		}
-
-		$success_response = json_encode(array('message' => 'Deleted the comment successfully!'));
-		$this->response($success_response, RestController::HTTP_OK);
 	}
 
 	/** HTTP_POST: Upvote the comment with the provided user handle
@@ -173,28 +286,44 @@ class Comments extends RestController {
    * @return HTTP_Response The HTTP status code according to the result and the data body
    */
 	public function upvote_post() {
-		$comment_id = $this->input->get('comment_id');
-		$user_handle = $this->input->get('user_handle');
+		$headers = $this->input->request_headers();
+		if (isset($headers['Authorization'])) {
+			$auth_header = $headers['Authorization'];
+			$auth_token = preg_replace('/^Bearer\s*/', '', $auth_header);
+			
+			if ($this->User->is_valid_token($auth_token)) {
+				$comment_id = $this->input->get('comment_id');
+				$user_handle = $this->input->get('user_handle');
+				
+				try {
+					$result = $this->Comment->upvote($comment_id, $user_handle);
+				}
+				catch(InvalidArgumentException $ex) {
+					$error_response = json_encode(array('message' => 'Invlid or Missing Argument!'));
+					$this->response($error_response, RestController::HTTP_BAD_REQUEST);
+				}
+				catch(Exception $ex) {
+					$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
+					$this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
+				}
 		
-		try {
-			$result = $this->Comment->upvote($comment_id, $user_handle);
+				if(!$result) {
+					$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
+					$this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
+				}
+		
+				$success_response = json_encode(array('message' => 'Upvoted the comment successfully!'));
+				$this->response($success_response, RestController::HTTP_CREATED);
+			}
+			else {
+				$error_response = json_encode(array('status' => 'error', 'message' => 'Unauthorized!'));
+				$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
+			}
 		}
-		catch(InvalidArgumentException $ex) {
-			$error_response = json_encode(array('message' => 'Invlid or Missing Argument!'));
-      $this->response($error_response, RestController::HTTP_BAD_REQUEST);
+		else {
+			$error_response = json_encode(array('status' => 'error', 'message' => 'No authorization header found!'));
+			$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
 		}
-		catch(Exception $ex) {
-      $error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
-      $this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
-    }
-
-		if(!$result) {
-			$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
-      $this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
-		}
-
-		$success_response = json_encode(array('message' => 'Upvoted the comment successfully!'));
-		$this->response($success_response, RestController::HTTP_CREATED);
 	}
 
 	/** HTTP_DELETE: Downvote the comment with the provided user handle
@@ -203,27 +332,89 @@ class Comments extends RestController {
    * @return HTTP_Response The HTTP status code according to the result and the data body
    */
 	public function downvote_delete() {
-		$comment_id = $this->input->get('comment_id');
-		$user_handle = $this->input->get('user_handle');
-
-		try {
-			$result = $this->Comment->downvote($comment_id, $user_handle);
+		$headers = $this->input->request_headers();
+		if (isset($headers['Authorization'])) {
+			$auth_header = $headers['Authorization'];
+			$auth_token = preg_replace('/^Bearer\s*/', '', $auth_header);
+			
+			if ($this->User->is_valid_token($auth_token)) {
+				$comment_id = $this->input->get('comment_id');
+				$user_handle = $this->input->get('user_handle');
+		
+				try {
+					$result = $this->Comment->downvote($comment_id, $user_handle);
+				}
+				catch(InvalidArgumentException $ex) {
+					$error_response = json_encode(array('message' => 'Invlid or Missing Argument!'));
+					$this->response($error_response, RestController::HTTP_BAD_REQUEST);
+				}
+				catch(Exception $ex) {
+					$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
+					$this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
+				}
+		
+				if(!$result) {
+					$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
+					$this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
+				}
+		
+				$success_response = json_encode(array('message' => 'Downvoted the comment successfully!'));
+				$this->response($success_response, RestController::HTTP_OK);
+			}
+			else {
+				$error_response = json_encode(array('status' => 'error', 'message' => 'Unauthorized!'));
+				$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
+			}
 		}
-		catch(InvalidArgumentException $ex) {
-			$error_response = json_encode(array('message' => 'Invlid or Missing Argument!'));
-      $this->response($error_response, RestController::HTTP_BAD_REQUEST);
+		else {
+			$error_response = json_encode(array('status' => 'error', 'message' => 'No authorization header found!'));
+			$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
 		}
-		catch(Exception $ex) {
-      $error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
-      $this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
-    }
+	}
 
-		if(!$result) {
-			$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
-      $this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
+	/** HTTP_POST: Togglevote the comment with the provided user handle
+   * @param int $comment_id
+   * @param string $user_handle
+   * @return HTTP_Response The HTTP status code according to the result and the data body
+   */
+	public function togglevote_post() {
+		$headers = $this->input->request_headers();
+		if (isset($headers['Authorization'])) {
+			$auth_header = $headers['Authorization'];
+			$auth_token = preg_replace('/^Bearer\s*/', '', $auth_header);
+			
+			if ($this->User->is_valid_token($auth_token)) {
+				$comment_id = $this->input->get('comment_id');
+				$user_handle = $this->input->get('user_handle');
+		
+				try {
+					$result = $this->Comment->togglevote($comment_id, $user_handle);
+				}
+				catch(InvalidArgumentException $ex) {
+					$error_response = json_encode(array('message' => 'Invlid or Missing Argument!'));
+					$this->response($error_response, RestController::HTTP_BAD_REQUEST);
+				}
+				catch(Exception $ex) {
+					$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
+					$this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
+				}
+		
+				if(!$result) {
+					$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
+					$this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
+				}
+		
+				$success_response = json_encode(array('message' => 'Togglevoted the comment successfully!'));
+				$this->response($success_response, RestController::HTTP_OK);
+			}
+			else {
+				$error_response = json_encode(array('status' => 'error', 'message' => 'Unauthorized!'));
+				$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
+			}
 		}
-
-		$success_response = json_encode(array('message' => 'Downvoted the comment successfully!'));
-		$this->response($success_response, RestController::HTTP_OK);
+		else {
+			$error_response = json_encode(array('status' => 'error', 'message' => 'No authorization header found!'));
+			$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
+		}
 	}
 }
