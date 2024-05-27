@@ -17,6 +17,7 @@ class Chats extends RestController {
 		parent::__construct();
 
 		$this->load->model('Chat');
+		$this->load->model('User');
 	}
 
 	/** HTTP_GET: Get the details of the chat for the given chat id
@@ -24,26 +25,42 @@ class Chats extends RestController {
    * @return HTTP_Response The HTTP status code according to the result and the data body
    */
 	public function index_get() {
-		$chat_id = $this->input->get('id');
-
-		try {
-			$chat_record = $this->Chat->get_chat($chat_id);
+		$headers = $this->input->request_headers();
+		if (isset($headers['Authorization'])) {
+			$auth_header = $headers['Authorization'];
+			$auth_token = preg_replace('/^Bearer\s*/', '', $auth_header);
+			
+			if ($this->User->is_valid_token($auth_token)) {
+				$chat_id = $this->input->get('id');
+		
+				try {
+					$chat_record = $this->Chat->get_chat($chat_id);
+				}
+				catch(ChatIdRequiredException $ex) {
+					$error_response = json_encode(array('message' => $ex->errorMessage()));
+					$this->response($error_response, RestController::HTTP_BAD_REQUEST);
+				}
+				catch(ChatDoesNotExistException $ex) {
+					$error_response = json_encode(array('message' => $ex->errorMessage()));
+					$this->response($error_response, RestController::HTTP_BAD_REQUEST);
+				}
+				catch(Exception $ex) {
+					$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
+					$this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
+				}
+		
+				$success_response = json_encode($chat_record);
+				$this->response($success_response, RestController::HTTP_OK);
+			}
+			else {
+				$error_response = json_encode(array('status' => 'error', 'message' => 'Unauthorized!'));
+				$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
+			}
 		}
-		catch(ChatIdRequiredException $ex) {
-			$error_response = json_encode(array('message' => $ex->errorMessage()));
-      $this->response($error_response, RestController::HTTP_BAD_REQUEST);
+		else {
+			$error_response = json_encode(array('status' => 'error', 'message' => 'No authorization header found!'));
+			$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
 		}
-		catch(ChatDoesNotExistException $ex) {
-			$error_response = json_encode(array('message' => $ex->errorMessage()));
-      $this->response($error_response, RestController::HTTP_BAD_REQUEST);
-		}
-		catch(Exception $ex) {
-      $error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
-      $this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
-    }
-
-		$success_response = json_encode($chat_record);
-		$this->response($success_response, RestController::HTTP_OK);
 	}
 
 	/** HTTP_GET: Get a list of the chats for the given user handle
@@ -51,22 +68,38 @@ class Chats extends RestController {
    * @return HTTP_Response The HTTP status code according to the result and the data body
    */
 	public function user_get() {
-		$user_handle = $this->input->get('user_handle');
-
-		try {
-			$chat_records = $this->Chat->get_user_chats($user_handle);
+		$headers = $this->input->request_headers();
+		if (isset($headers['Authorization'])) {
+			$auth_header = $headers['Authorization'];
+			$auth_token = preg_replace('/^Bearer\s*/', '', $auth_header);
+			
+			if ($this->User->is_valid_token($auth_token)) {
+				$user_handle = $this->input->get('user_handle');
+		
+				try {
+					$chat_records = $this->Chat->get_user_chats($user_handle);
+				}
+				catch(UserHandleRequiredException $ex) {
+					$error_response = json_encode(array('message' => $ex->errorMessage()));
+					$this->response($error_response, RestController::HTTP_BAD_REQUEST);
+				}
+				catch(Exception $ex) {
+					$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
+					$this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
+				}
+		
+				$success_response = json_encode($chat_records);
+				$this->response($success_response, RestController::HTTP_OK);
+			}
+			else {
+				$error_response = json_encode(array('status' => 'error', 'message' => 'Unauthorized!'));
+				$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
+			}
 		}
-		catch(UserHandleRequiredException $ex) {
-			$error_response = json_encode(array('message' => $ex->errorMessage()));
-      $this->response($error_response, RestController::HTTP_BAD_REQUEST);
+		else {
+			$error_response = json_encode(array('status' => 'error', 'message' => 'No authorization header found!'));
+			$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
 		}
-		catch(Exception $ex) {
-      $error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
-      $this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
-    }
-
-		$success_response = json_encode($chat_records);
-		$this->response($success_response, RestController::HTTP_OK);
 	}
 
 	/** HTTP_POST: Create a new chat with the provided users
@@ -74,29 +107,45 @@ class Chats extends RestController {
    * @return HTTP_Response The HTTP status code according to the result and the data body
    */
   public function index_post() {
-		$user_handles = $this->input->get('user_handles');
-
-		$user_handles = json_decode($user_handles);
-
-		try {
-			$chat_id = $this->Chat->create($user_handles);
+		$headers = $this->input->request_headers();
+		if (isset($headers['Authorization'])) {
+			$auth_header = $headers['Authorization'];
+			$auth_token = preg_replace('/^Bearer\s*/', '', $auth_header);
+			
+			if ($this->User->is_valid_token($auth_token)) {
+				$user_handles = $this->input->get('user_handles');
+		
+				$user_handles = json_decode($user_handles);
+		
+				try {
+					$chat_id = $this->Chat->create($user_handles);
+				}
+				catch(InvalidArgumentException $ex) {
+					$error_response = json_encode(array('message' => 'Invlid or Missing Argument!'));
+					$this->response($error_response, RestController::HTTP_BAD_REQUEST);
+				}
+				catch(Exception $ex) {
+					$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
+					$this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
+				}
+		
+				if(!$chat_id) {
+					$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
+					$this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
+				}
+		
+				$success_response = json_encode(array('chat_id' => $chat_id));
+				$this->response($success_response, RestController::HTTP_CREATED);
+			}
+			else {
+				$error_response = json_encode(array('status' => 'error', 'message' => 'Unauthorized!'));
+				$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
+			}
 		}
-		catch(InvalidArgumentException $ex) {
-			$error_response = json_encode(array('message' => 'Invlid or Missing Argument!'));
-      $this->response($error_response, RestController::HTTP_BAD_REQUEST);
+		else {
+			$error_response = json_encode(array('status' => 'error', 'message' => 'No authorization header found!'));
+			$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
 		}
-		catch(Exception $ex) {
-      $error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
-      $this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
-    }
-
-		if(!$chat_id) {
-			$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
-      $this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
-		}
-
-		$success_response = json_encode(array('chat_id' => $chat_id));
-		$this->response($success_response, RestController::HTTP_CREATED);
 	}
 
 	/** HTTP_DELETE: Delete the book for the given id
@@ -104,31 +153,47 @@ class Chats extends RestController {
    * @return HTTP_Response The HTTP status code according to the result and the data body
    */
 	public function index_delete() {
-		$chat_id = $this->input->get('id');
+		$headers = $this->input->request_headers();
+		if (isset($headers['Authorization'])) {
+			$auth_header = $headers['Authorization'];
+			$auth_token = preg_replace('/^Bearer\s*/', '', $auth_header);
+			
+			if ($this->User->is_valid_token($auth_token)) {
+				$chat_id = $this->input->get('id');
+				
+				try {
+					$result = $this->Chat->delete($chat_id);
+				}
+				catch(ChatIdRequiredException $ex) {
+					$error_response = json_encode(array('message' => $ex->errorMessage()));
+					$this->response($error_response, RestController::HTTP_BAD_REQUEST);
+				}
+				catch(ChatDoesNotExistException $ex) {
+					$error_response = json_encode(array('message' => $ex->errorMessage()));
+					$this->response($error_response, RestController::HTTP_BAD_REQUEST);
+				}
+				catch(Exception $ex) {
+					$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
+					$this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
+				}
 		
-		try {
-			$result = $this->Chat->delete($chat_id);
+				if(!$result) {
+					$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
+					$this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
+				}
+		
+				$success_response = json_encode(array('message' => 'Deleted the chat and the related users successfully!'));
+				$this->response($success_response, RestController::HTTP_OK);
+			}
+			else {
+				$error_response = json_encode(array('status' => 'error', 'message' => 'Unauthorized!'));
+				$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
+			}
 		}
-		catch(ChatIdRequiredException $ex) {
-			$error_response = json_encode(array('message' => $ex->errorMessage()));
-      $this->response($error_response, RestController::HTTP_BAD_REQUEST);
+		else {
+			$error_response = json_encode(array('status' => 'error', 'message' => 'No authorization header found!'));
+			$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
 		}
-		catch(ChatDoesNotExistException $ex) {
-			$error_response = json_encode(array('message' => $ex->errorMessage()));
-      $this->response($error_response, RestController::HTTP_BAD_REQUEST);
-		}
-		catch(Exception $ex) {
-      $error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
-      $this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
-    }
-
-		if(!$result) {
-			$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
-      $this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
-		}
-
-		$success_response = json_encode(array('message' => 'Deleted the chat and the related users successfully!'));
-		$this->response($success_response, RestController::HTTP_OK);
 	}
 
 	/** HTTP_POST: Add a new user for the provided chat
@@ -137,33 +202,49 @@ class Chats extends RestController {
    * @return HTTP_Response The HTTP status code according to the result and the data body
    */
   public function add_user_post() {
-		$chat_id = $this->input->get('id');
-		$user_handles = $this->input->get('user_handles');
-
-		$user_handles = json_decode($user_handles);
-
-		try {
-			$result = $this->Chat->add_users($chat_id, $user_handles);
+		$headers = $this->input->request_headers();
+		if (isset($headers['Authorization'])) {
+			$auth_header = $headers['Authorization'];
+			$auth_token = preg_replace('/^Bearer\s*/', '', $auth_header);
+			
+			if ($this->User->is_valid_token($auth_token)) {
+				$chat_id = $this->input->get('id');
+				$user_handles = $this->input->get('user_handles');
+		
+				$user_handles = json_decode($user_handles);
+		
+				try {
+					$result = $this->Chat->add_users($chat_id, $user_handles);
+				}
+				catch(ChatIdRequiredException $ex) {
+					$error_response = json_encode(array('message' => $ex->errorMessage()));
+					$this->response($error_response, RestController::HTTP_BAD_REQUEST);
+				}
+				catch(ChatDoesNotExistException $ex) {
+					$error_response = json_encode(array('message' => $ex->errorMessage()));
+					$this->response($error_response, RestController::HTTP_BAD_REQUEST);
+				}
+				catch(Exception $ex) {
+					$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
+					$this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
+				}
+		
+				if(!$result) {
+					$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
+					$this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
+				}
+		
+				$success_response = json_encode(array('message' => 'Added the user to the chat successfully!'));
+				$this->response($success_response, RestController::HTTP_CREATED);
+			}
+			else {
+				$error_response = json_encode(array('status' => 'error', 'message' => 'Unauthorized!'));
+				$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
+			}
 		}
-		catch(ChatIdRequiredException $ex) {
-			$error_response = json_encode(array('message' => $ex->errorMessage()));
-      $this->response($error_response, RestController::HTTP_BAD_REQUEST);
+		else {
+			$error_response = json_encode(array('status' => 'error', 'message' => 'No authorization header found!'));
+			$this->response($error_response, RestController::HTTP_UNAUTHORIZED);
 		}
-		catch(ChatDoesNotExistException $ex) {
-			$error_response = json_encode(array('message' => $ex->errorMessage()));
-      $this->response($error_response, RestController::HTTP_BAD_REQUEST);
-		}
-		catch(Exception $ex) {
-      $error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
-      $this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
-    }
-
-		if(!$result) {
-			$error_response = json_encode(array('message' => 'Oops! Something went wrong :/'));
-      $this->response($error_response, RestController::HTTP_INTERNAL_ERROR);
-		}
-
-		$success_response = json_encode(array('message' => 'Added the user to the chat successfully!'));
-		$this->response($success_response, RestController::HTTP_CREATED);
 	}
 }

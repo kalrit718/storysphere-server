@@ -26,7 +26,7 @@ class Post extends CI_Model {
       throw new PostDoesNotExistException();
     }
 
-    $this->db->select('post_id, user_handle, content, image_url, time_stamp');
+    $this->db->select('post_id, user_handle, title, content, image_url, time_stamp');
     $this->db->from($this->table);
     $this->db->where('post_id', $post_id);
 
@@ -45,7 +45,7 @@ class Post extends CI_Model {
       throw new UserHandleRequiredException();
     }
 
-    $this->db->select('post_id, user_handle, content, image_url, time_stamp');
+    $this->db->select('post_id, user_handle, title, content, image_url, time_stamp');
     $this->db->from($this->table);
     $this->db->where('user_handle', $user_handle);
 
@@ -60,7 +60,7 @@ class Post extends CI_Model {
    */
   public function get_all_posts() {
 
-    $this->db->select('post_id, user_handle, content, image_url, time_stamp');
+    $this->db->select('post_id, user_handle, title, content, image_url, time_stamp');
     $this->db->from($this->table);
 
     $query = $this->db->get();
@@ -192,6 +192,36 @@ class Post extends CI_Model {
     $this->db->where('post_id', $post_id);
     $this->db->where('user_handle', $user_handle);
     $this->db->delete($this->post_upvote_table);
+
+    return $this->db->affected_rows();
+  }
+
+  /** Downvote the post with the provided user handle
+   * @param int $post_id
+   * @param int $user_handle
+   * @return int Number of rows affected by the SQL operation
+   */
+  public function togglevote($post_id, $user_handle) {
+    if(!$post_id || !$user_handle) {
+      throw new InvalidArgumentException();
+    }
+
+    $this->db->where('post_id', $post_id);
+    $this->db->where('user_handle', $user_handle);
+    $count = $this->db->count_all_results($this->post_upvote_table);
+
+    if($count > 0) {
+      $this->db->where('post_id', $post_id);
+      $this->db->where('user_handle', $user_handle);
+      $this->db->delete($this->post_upvote_table);
+    }
+    else {
+      $data = array(
+        'post_id' => $post_id,
+        'user_handle' => $user_handle
+      );
+      $this->db->insert($this->post_upvote_table, $data);
+    }
 
     return $this->db->affected_rows();
   }

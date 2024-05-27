@@ -1,5 +1,5 @@
 <?php
-require_once(APPPATH . '/exceptions/UserExceptions.php'); 
+require_once(APPPATH . '/exceptions/AuthorExceptions.php'); 
 use StorySphere\CustomException\AuthorIdRequiredException;
 use StorySphere\CustomException\AuthorDoesNotExistException;
 

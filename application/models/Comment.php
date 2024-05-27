@@ -56,6 +56,19 @@ class Comment extends CI_Model {
     return $result;
   }
 
+  /** Get the list of all comments
+   * @return array List of comments
+   */
+  public function get_all_comments() {
+    $this->db->select('comment_id, post_id, comment_body, user_handle, time_stamp');
+    $this->db->from($this->table);    
+
+    $query = $this->db->get();
+    $result = $query->result_array();
+
+    return $result;
+  }
+
   /** Create a new comment with the provided details
    * @param int $post_id
    * @param string $comment_body
@@ -150,6 +163,36 @@ class Comment extends CI_Model {
     $this->db->where('comment_id', $comment_id);
     $this->db->where('user_handle', $user_handle);
     $this->db->delete($this->comment_upvote_table);
+
+    return $this->db->affected_rows();
+  }
+
+  /** Toggle the existing vote for the comment with the provided user handle
+   * @param int $comment_id
+   * @param int $user_handle
+   * @return int Number of rows affected by the SQL operation
+   */
+  public function togglevote($comment_id, $user_handle) {
+    if(!$comment_id || !$user_handle) {
+      throw new InvalidArgumentException();
+    }
+
+    $this->db->where('comment_id', $comment_id);
+    $this->db->where('user_handle', $user_handle);
+    $count = $this->db->count_all_results($this->comment_upvote_table);
+
+    if($count > 0) {
+      $this->db->where('comment_id', $comment_id);
+      $this->db->where('user_handle', $user_handle);
+      $this->db->delete($this->comment_upvote_table);
+    }
+    else {
+      $data = array(
+        'comment_id' => $comment_id,
+        'user_handle' => $user_handle
+      );
+      $this->db->insert($this->comment_upvote_table, $data);
+    }
 
     return $this->db->affected_rows();
   }
